@@ -2,7 +2,7 @@
 name = "ethdenver2022"
 version = "0.1.0"
 description = ""
-authors = ["Jayden Windle <jaydenwindle@gmail.com>"]
+authors = ["Jayden Windle <jaydenwindle@gmail.com>", "Lance Rogers <lancekrogers@gmail.com"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -11,9 +11,11 @@ Django = "^4.0.2"
 celery = {extras = ["redis"], version = "^5.2.3"}
 requests = "^2.27.1"
 django-environ = "^0.8.1"
+djangorestframework = "^3.13.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.1.0", allow-prereleases = true}
+pynvim = "^0.4.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
