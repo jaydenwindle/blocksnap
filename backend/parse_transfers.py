@@ -19,7 +19,7 @@ def get_transfers(page: int):
     to_block = start_block + ((page + 1) * PAGE_SIZE)
 
     contract = w3.eth.contract(
-        address=Web3.toChecksumAddress("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
+        address=Web3.toChecksumAddress("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"),
         abi=[
             {
                 "type": "event",
@@ -55,7 +55,7 @@ def get_transfers(page: int):
     return addresses
 
 
-start_block = 9380410
+start_block = 12287507
 end_block = w3.eth.get_block("latest").number
 
 PAGE_SIZE = 2000
