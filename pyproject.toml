@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "ethdenver2022"
+version = "0.1.0"
+description = ""
+authors = ["Jayden Windle <jaydenwindle@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+web3 = "^5.28.0"
+
+[tool.poetry.dev-dependencies]
+black = {version = "^22.1.0", allow-prereleases = true}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
