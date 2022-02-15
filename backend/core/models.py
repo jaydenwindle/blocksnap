@@ -12,11 +12,11 @@ class Snapshot(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.contract_address} Snapshot: {self.id}"
+        return f"{self.contract_address} Snapshot: {self.pk}"
 
 
 class Profile(models.Model):
-    user =
+    user = models.OneToOneField(User)
     address = models.CharField(max_length=42, primary_key=True)
     snapshots = models.ManyToManyField(Snapshot)
 
