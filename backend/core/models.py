@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+import hashlib
+from django.db.models.signals import post_save
 
 
 class Snapshot(models.Model):
@@ -14,9 +16,9 @@ class Snapshot(models.Model):
     contract_address = models.CharField(max_length=42)
     user_address = models.CharField(max_length=42, primary_key=True)
     start_blocknumber = models.IntegerField(default=3914495)
-    last_snapshot_block = models.IntegerField()
+    last_snapshot_block = models.IntegerField(blank=True)
     public = models.BooleanField(default=True)
-    url = models.URLField()
+    url = models.URLField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField()
 
@@ -49,7 +51,7 @@ class Filter(models.Model):
     filter_hash: keccak hash of filter json
     url: url of stored filtered snapshot
     """
-    snapshot = models.ForiegnKey(Snapshot, on_delete=models.CASCADE)
+    snapshot = models.ForeignKey(Snapshot, on_delete=models.CASCADE)
     filters = models.JSONField()
-    filter_hash = models.CharField(max_length=64)
+    filter_hash = models.CharField(max_length=64, blank=True)
     url = models.URLField()
