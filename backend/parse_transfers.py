@@ -7,7 +7,8 @@ import itertools
 event_hash = Web3.keccak(text="Transfer(address,address,uint256)").hex()
 w3 = Web3(
     Web3.HTTPProvider(
-        "https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD"
+        "https://speedy-nodes-nyc.moralis.io/88bd1896aab0a7a93ae345dc/eth/mainnet/archive",
+        request_kwargs={"timeout": 60},
     )
 )
 
@@ -19,27 +20,40 @@ def get_transfers(page: int):
     to_block = start_block + ((page + 1) * PAGE_SIZE)
 
     contract = w3.eth.contract(
-        address=Web3.toChecksumAddress("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"),
+        address=Web3.toChecksumAddress("0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"),
         abi=[
             {
-                "type": "event",
                 "anonymous": False,
-                "name": "Transfer",
                 "inputs": [
-                    {"type": "address", "name": "from", "indexed": True},
-                    {"type": "address", "name": "to", "indexed": True},
-                    {"type": "uint256", "name": "tokenId", "indexed": True},
+                    {
+                        "indexed": True,
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address",
+                    },
+                    {
+                        "indexed": True,
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address",
+                    },
+                    {
+                        "indexed": True,
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256",
+                    },
                 ],
+                "name": "Transfer",
+                "type": "event",
             },
         ],
     )
 
-    print(page, from_block, to_block)
-    event_filter = contract.events.Transfer.createFilter(
+    entries = getattr(contract.events, "Transfer").getLogs(
         fromBlock=from_block, toBlock=to_block
     )
-    entries = event_filter.get_all_entries()
-    print(len(entries))
+    print(f"Page {page}/{pages}: {len(entries)} entries")
 
     addresses = []
 
@@ -55,10 +69,10 @@ def get_transfers(page: int):
     return addresses
 
 
-start_block = 12287507
+start_block = 9380410
 end_block = w3.eth.get_block("latest").number
 
-PAGE_SIZE = 2000
+PAGE_SIZE = 1000
 pages = ceil((end_block - start_block) / PAGE_SIZE)
 
 print(pages)

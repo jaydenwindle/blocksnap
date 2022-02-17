@@ -9,10 +9,11 @@ from web3 import Web3
 from celery import shared_task, chord
 from django.conf import settings
 
-PAGE_SIZE = 1500
+PAGE_SIZE = 20000
 w3 = Web3(
     Web3.HTTPProvider(
-        "https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD"
+        "https://speedy-nodes-nyc.moralis.io/88bd1896aab0a7a93ae345dc/eth/mainnet/archive",
+        request_kwargs={"timeout": 60},
     )
 )
 
