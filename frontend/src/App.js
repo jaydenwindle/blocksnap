@@ -341,9 +341,21 @@ function Snapshot() {
     <>
       <Header />
       <Container maxW="container.lg">
-        <Heading pt={24} pb={12}>
-          Snapshot #{params.snapshotId}
-        </Heading>
+        <Heading pt={24}>Snapshot #{params.snapshotId}</Heading>
+        <Box pb={12} pt={4}>
+          <Tag mr={4} mb={4}>
+            Contract address: {data?.contract_address}
+          </Tag>
+          <Tag mr={4} mb={4}>
+            Chain: {data?.chain}
+          </Tag>
+          <Tag mr={4} mb={4}>
+            Block Range: {data?.from_block}-{data?.to_block}
+          </Tag>
+          <Tag mr={4} mb={4}>
+            Event: {data?.event.name}
+          </Tag>
+        </Box>
         <Tabs>
           <TabList>
             <Tab>
