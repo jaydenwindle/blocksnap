@@ -12,6 +12,7 @@ celery = {extras = ["redis"], version = "^5.2.3"}
 requests = "^2.27.1"
 django-environ = "^0.8.1"
 djangorestframework = "^3.13.1"
+django-cors-headers = "^3.11.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.1.0", allow-prereleases = true}

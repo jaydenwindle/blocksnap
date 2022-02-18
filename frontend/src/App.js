@@ -1,5 +1,16 @@
-import { useEffect } from "react";
-import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  HashRouter,
+  Routes,
+  Route,
+  Link,
+  useParams,
+  useNavigate,
+} from "react-router-dom";
+import useSWR from "swr";
+
+import Papa from "papaparse";
+
 import {
   ChakraProvider,
   Box,
@@ -29,6 +40,22 @@ import {
   NumberDecrementStepper,
   Radio,
   RadioGroup,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Tag,
+  Text,
+  Divider,
+  Table,
+  Thead,
+  Tbody,
+  Tfoot,
+  Tr,
+  Th,
+  Td,
+  TableCaption,
 } from "@chakra-ui/react";
 import {
   Provider as WagmiProvider,
@@ -40,37 +67,8 @@ import {
 } from "wagmi";
 import { useForm } from "react-hook-form";
 
-function RadioCard(props) {
-  const { getInputProps, getCheckboxProps } = useRadio(props);
-
-  const input = getInputProps();
-  const checkbox = getCheckboxProps();
-
-  return (
-    <Box as="label">
-      <input {...input} />
-      <Box
-        {...checkbox}
-        cursor="pointer"
-        borderWidth="1px"
-        borderRadius="md"
-        boxShadow="md"
-        _checked={{
-          bg: "gray.700",
-          color: "white",
-          borderColor: "teal.600",
-        }}
-        _focus={{
-          boxShadow: "outline",
-        }}
-        px={5}
-        py={3}
-      >
-        {props.children}
-      </Box>
-    </Box>
-  );
-}
+const fetcher = (...args) => fetch(...args).then((res) => res.json());
+const textFetcher = (...args) => fetch(...args).then((res) => res.json());
 
 function Header() {
   const [{ data }, connect] = useConnect();
@@ -126,7 +124,6 @@ function NewSnapshot() {
     "Fantom",
     "BSC",
   ];
-  const contractTypes = ["ERC721", "ERC1155", "ERC20", "Custom"];
 
   const {
     register,
@@ -136,7 +133,35 @@ function NewSnapshot() {
     formState: { errors },
   } = useForm();
 
-  const contractAbi = watch("contractAbi");
+  const [{ data: accountData }, disconnect] = useAccount({
+    fetchEns: true,
+  });
+
+  let navigate = useNavigate();
+
+  const onSubmit = async (data) => {
+    console.log(data);
+
+    data.creator = accountData?.address;
+    const { contract_abi, event } = data;
+    data.contract_abi = JSON.parse(contract_abi);
+    data.event = JSON.parse(event);
+    const response = await fetch("http://localhost:8000/api/snapshots/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data), // body data type must match "Content-Type" header
+    });
+    const result = await response.json();
+    console.log(result);
+
+    const { id } = result;
+
+    navigate(`/snapshots/${id}`);
+  };
+
+  const contractAbi = watch("contract_abi");
   const event = watch("event");
 
   const events = JSON.parse(contractAbi || "[]").filter(
@@ -187,11 +212,11 @@ function NewSnapshot() {
           </RadioGroup>
         </FormControl> */}
         <FormControl mb={8}>
-          <FormLabel htmlFor="contractAbi">Contract ABI</FormLabel>
+          <FormLabel htmlFor="contract_abi">Contract ABI</FormLabel>
           <Textarea
-            id="contractAbi"
+            id="contract_abi"
             placeholder="[...]"
-            {...register("contractAbi")}
+            {...register("contract_abi")}
           />
         </FormControl>
         {events.length > 0 && (
@@ -224,13 +249,10 @@ function NewSnapshot() {
                   {input.name} (<Code>{input.type}</Code>)
                 </FormLabel>
                 <Flex flexDirection="row">
-                  <Input
-                    {...register(`event_args.${input.name}`)}
-                    isDisabled={!input.indexed}
-                  />
+                  <Input {...register(`argument_filters.${input.name}`)} />
                   {input.type === "address" && (
                     <Checkbox
-                      {...register(`captured_args.${input.name}`)}
+                      {...register(`captured_values.${input.name}`)}
                       ml={4}
                     >
                       Capture
@@ -254,8 +276,127 @@ function NewSnapshot() {
           </>
         )}
         <Box mb={24}>
-          <Button isDisabled={!contractAbi || !event}>Generate Snapshot</Button>
+          <Button
+            isDisabled={!contractAbi || !event}
+            onClick={handleSubmit(onSubmit)}
+          >
+            Generate Snapshot
+          </Button>
         </Box>
+      </Container>
+    </>
+  );
+}
+
+function Snapshot() {
+  let params = useParams();
+  const [addresses, setAddresses] = useState([]);
+  const [events, setEvents] = useState([]);
+  const { data, error } = useSWR(
+    `http://localhost:8000/api/snapshots/${params.snapshotId}`,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (data?.addresses_cid) {
+      console.log(`https://cloudflare-ipfs.com/ipfs/${data.addresses_cid}`);
+      Papa.parse(`https://cloudflare-ipfs.com/ipfs/${data.addresses_cid}`, {
+        download: true,
+        worker: true,
+        header: true,
+        // step: (row) => {
+        //   console.log(row.data);
+        //   setAddresses((prev) => [...prev, row.data]);
+        // },
+        error: (err) => console.log(err),
+        complete: (results) => {
+          setAddresses(results.data);
+        },
+      });
+    }
+  }, [data?.addresses_cid]);
+
+  useEffect(() => {
+    if (data?.events_cid) {
+      console.log(`https://cloudflare-ipfs.com/ipfs/${data.events_cid}`);
+      Papa.parse(`https://cloudflare-ipfs.com/ipfs/${data.events_cid}`, {
+        download: true,
+        worker: true,
+        header: true,
+        // step: (row) => {
+        //   console.log(row.data);
+        //   setEvents((prev) => [...prev, row.data]);
+        // },
+        error: (err) => console.log(err),
+        complete: (results) => {
+          setEvents(results.data);
+        },
+      });
+    }
+  }, [data?.events_cid]);
+
+  console.log(params, data, addresses);
+
+  return (
+    <>
+      <Header />
+      <Container maxW="container.lg">
+        <Heading pt={24} pb={12}>
+          Snapshot #{params.snapshotId}
+        </Heading>
+        <Tabs>
+          <TabList>
+            <Tab>
+              Addresses <Tag ml={2}>{data?.addresses_count}</Tag>
+            </Tab>
+            <Tab>
+              Events <Tag ml={2}>{data?.events_count}</Tag>
+            </Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel pl={0} pr={0}>
+              <Table variant="simple">
+                <Thead>
+                  <Tr>
+                    {Object.keys(addresses?.[0] || {}).map((key) => (
+                      <Th>{key}</Th>
+                    ))}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {addresses.map((address) => (
+                    <Tr>
+                      {Object.keys(address).map((key) => (
+                        <Td>{address[key]}</Td>
+                      ))}
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TabPanel>
+            <TabPanel pl={0} pr={0} overflow={"scroll"}>
+              <Table variant="simple">
+                <Thead>
+                  <Tr>
+                    {Object.keys(events?.[0] || {}).map((key) => (
+                      <Th>{key}</Th>
+                    ))}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {events.map((event) => (
+                    <Tr>
+                      {Object.keys(event).map((key) => (
+                        <Td>{event[key]}</Td>
+                      ))}
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Container>
     </>
   );
@@ -268,6 +409,7 @@ function App() {
         <HashRouter>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/snapshots/:snapshotId" element={<Snapshot />} />
             <Route path="/snapshots/new" element={<NewSnapshot />} />
           </Routes>
         </HashRouter>

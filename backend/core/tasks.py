@@ -1,84 +1,71 @@
+import json
 import io
 import csv
 import time
 import multiprocessing
 import itertools
+from click import argument
 import requests
 from math import ceil
 from web3 import Web3
-from celery import shared_task, chord
+from celery import shared_task, chord, chain
 from django.conf import settings
 
-PAGE_SIZE = 20000
+from core.models import Snapshot
+
+PAGE_SIZE = 2000
 w3 = Web3(
     Web3.HTTPProvider(
-        "https://speedy-nodes-nyc.moralis.io/88bd1896aab0a7a93ae345dc/eth/mainnet/archive",
+        "https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD",
         request_kwargs={"timeout": 60},
     )
 )
 
 
 @shared_task
-def start_transfer_snapshot(contract_address: str, event: str):
+def execute_snapshot(snapshot_id: int):
+    try:
+        snapshot = Snapshot.objects.get(pk=snapshot_id)
+    except Snapshot.DoesNotExist:
+        return
 
-    response = requests.get(
-        (
-            "https://api.etherscan.io/api"
-            "?module=account"
-            "&action=txlist"
-            f"&address={Web3.toChecksumAddress(contract_address)}"
-            "&startblock=0"
-            "&endblock=99999999"
-            "&page=1"
-            "&offset=10"
-            "&sort=asc"
-            f"&apikey={settings.ETHERSCAN_API_KEY}"
-        )
-    )
-    deploy_block_number = int(response.json().get("result")[0].get("blockNumber"))
-    print(deploy_block_number)
+    pages = ceil((snapshot.to_block - snapshot.from_block) / PAGE_SIZE)
 
-    to_block = w3.eth.get_block("latest").number
-    pages = ceil((to_block - deploy_block_number) / PAGE_SIZE)
-
-    response = requests.get(
-        (
-            "https://api.etherscan.io/api"
-            "?module=contract"
-            "&action=getabi"
-            f"&address={Web3.toChecksumAddress(contract_address)}"
-            f"&apikey={settings.ETHERSCAN_API_KEY}"
-        )
-    )
-
-    abi = response.json().get("result")
-    print(abi)
-
-    chord(
-        (
-            gather_events_for_page.s(
-                contract_address, abi, event, deploy_block_number, page
-            )
-            for page in range(10)
+    chain(
+        chord(
+            (gather_events_for_page.s(snapshot_id, page) for page in range(10)),
+            store_event_results.s(snapshot_id),
         ),
-        store_results.s(),
+        gather_addresses.s(snapshot_id),
+        store_addresses.s(snapshot_id),
     )()
 
 
 @shared_task
-def gather_events_for_page(
-    contract_address: str, abi: str, event: str, start_block: int, page: int
-):
-    from_block = start_block + (page * PAGE_SIZE)
-    to_block = start_block + ((page + 1) * PAGE_SIZE)
+def gather_events_for_page(snapshot_id: int, page: int):
+    try:
+        snapshot = Snapshot.objects.get(pk=snapshot_id)
+    except Snapshot.DoesNotExist:
+        return
+
+    from_block = snapshot.from_block + (page * PAGE_SIZE)
+    to_block = snapshot.from_block + ((page + 1) * PAGE_SIZE)
 
     contract = w3.eth.contract(
-        address=Web3.toChecksumAddress(contract_address),
-        abi=abi,
+        address=Web3.toChecksumAddress(snapshot.contract_address),
+        abi=snapshot.contract_abi,
     )
 
-    entries = getattr(contract.events, event).getLogs(
-        fromBlock=from_block, toBlock=to_block
+    parsed_filters = {}
+
+    for key in snapshot.argument_filters.keys():
+        if snapshot.argument_filters[key]:
+            parsed_filters[key] = snapshot.argument_filters[key]
+
+    print(from_block, to_block, parsed_filters)
+
+    entries = getattr(contract.events, snapshot.event["name"]).getLogs(
+        fromBlock=from_block, toBlock=to_block, argument_filters=parsed_filters
     )
 
     parsed_entries = []
@@ -99,7 +86,12 @@ def gather_events_for_page(
 
 
 @shared_task
-def store_results(results):
+def store_event_results(results, snapshot_id):
+    try:
+        snapshot = Snapshot.objects.get(pk=snapshot_id)
+    except Snapshot.DoesNotExist:
+        return
+
     file = io.StringIO()
     writer = csv.writer(file)
 
@@ -110,14 +102,82 @@ def store_results(results):
     for entry in all_entries:
         writer.writerow(entry.values())
 
-    print(file.getvalue())
+    pin_url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+
+    response = requests.post(
+        pin_url,
+        files={
+            "file": file.getvalue(),
+        },
+        headers={"Authorization": f"Bearer {settings.PINATA_JWT}"},
+    )
+
+    result = response.json()
+
+    print(result)
+
+    snapshot.events_cid = result["IpfsHash"]
+    snapshot.events_count = len(all_entries)
+    snapshot.save()
+
+    return all_entries
+
+
+@shared_task
+def gather_addresses(results, snapshot_id):
+    try:
+        snapshot = Snapshot.objects.get(pk=snapshot_id)
+    except Snapshot.DoesNotExist:
+        return
+
+    print(snapshot.captured_values)
+
+    addresses = []
+
+    values_to_capture = []
+    for key in snapshot.captured_values.keys():
+        if snapshot.captured_values[key]:
+            values_to_capture.append(key)
+
+    for entry in results:
+        for value in values_to_capture:
+            addresses.append(entry.get(value))
+
+    addresses_deduped = list(dict.fromkeys(addresses))
+    print(len(addresses_deduped))
+
+    return addresses_deduped
+
+
+@shared_task
+def store_addresses(addresses, snapshot_id):
+    try:
+        snapshot = Snapshot.objects.get(pk=snapshot_id)
+    except Snapshot.DoesNotExist:
+        return
+
+    file = io.StringIO()
+    writer = csv.writer(file)
+
+    writer.writerow(["Wallet Address"])
+
+    for address in addresses:
+        writer.writerow([address])
 
     pin_url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
 
     response = requests.post(
         pin_url,
-        files={"file": file.getvalue()},
+        files={
+            "file": file.getvalue(),
+        },
         headers={"Authorization": f"Bearer {settings.PINATA_JWT}"},
     )
 
-    print(response.json())
+    result = response.json()
+
+    print(result)
+
+    snapshot.addresses_cid = result["IpfsHash"]
+    snapshot.addresses_count = len(addresses)
+    snapshot.save()
