@@ -56,6 +56,14 @@ import {
   Th,
   Td,
   TableCaption,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   Provider as WagmiProvider,
@@ -292,6 +300,8 @@ function Snapshot() {
   let params = useParams();
   const [addresses, setAddresses] = useState([]);
   const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [addressesLoading, setAddressesLoading] = useState(false);
   const { data, error } = useSWR(
     `http://localhost:8000/api/snapshots/${params.snapshotId}`,
     fetcher
@@ -300,17 +310,19 @@ function Snapshot() {
   useEffect(() => {
     if (data?.addresses_cid) {
       console.log(`https://cloudflare-ipfs.com/ipfs/${data.addresses_cid}`);
+      setAddressesLoading(true);
+      const results = [];
+
       Papa.parse(`https://cloudflare-ipfs.com/ipfs/${data.addresses_cid}`, {
         download: true,
         worker: true,
         header: true,
-        // step: (row) => {
-        //   console.log(row.data);
-        //   setAddresses((prev) => [...prev, row.data]);
-        // },
-        error: (err) => console.log(err),
-        complete: (results) => {
-          setAddresses(results.data);
+        step: (row) => {
+          results.push(row.data);
+        },
+        complete: () => {
+          setAddresses(results);
+          setAddressesLoading(false);
         },
       });
     }
@@ -319,28 +331,58 @@ function Snapshot() {
   useEffect(() => {
     if (data?.events_cid) {
       console.log(`https://cloudflare-ipfs.com/ipfs/${data.events_cid}`);
+      setEventsLoading(true);
+
+      const results = [];
+
       Papa.parse(`https://cloudflare-ipfs.com/ipfs/${data.events_cid}`, {
         download: true,
         worker: true,
         header: true,
-        // step: (row) => {
-        //   console.log(row.data);
-        //   setEvents((prev) => [...prev, row.data]);
-        // },
-        error: (err) => console.log(err),
-        complete: (results) => {
-          setEvents(results.data);
+        step: (row) => {
+          results.push(row.data);
+        },
+        complete: () => {
+          setEvents(results);
+          setEventsLoading(false);
         },
       });
     }
   }, [data?.events_cid]);
 
-  console.log(params, data, addresses);
+  console.log(params, data, addresses, eventsLoading, addressesLoading);
 
   return (
     <>
       <Header />
       <Container maxW="container.lg">
+        <Modal
+          isOpen={data && (!data?.addresses_cid || !data?.events_cid)}
+          isCentered
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader textAlign="center">Generating snapshot...</ModalHeader>
+            <ModalBody pb={8}>
+              <Center>
+                <Spinner />
+              </Center>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+        <Modal isOpen={data && (eventsLoading || addressesLoading)} isCentered>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader textAlign="center">
+              Loading snapshot data..
+            </ModalHeader>
+            <ModalBody pb={8}>
+              <Center>
+                <Spinner />
+              </Center>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
         <Heading pt={24}>Snapshot #{params.snapshotId}</Heading>
         <Box pb={12} pt={4}>
           <Tag mr={4} mb={4}>
