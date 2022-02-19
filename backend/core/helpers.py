@@ -9,6 +9,5 @@ def hash_args(*args):
     for n in args:
         st = st + str(n)
     sha = hashlib.sha3_256()
-    sha.update(st).encode('utf-8')
+    sha.update(st.encode('utf-8'))
     return sha.hexdigest()
-
