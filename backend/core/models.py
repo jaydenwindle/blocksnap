@@ -1,6 +1,11 @@
 from django.db import models
 from django.utils import timezone
-import hashlib
+from core.helpers import hash_args
+
+
+class Profile(models.Model):
+    address = models.CharField(max_length=42, unique=True)
+    snapshots = models.ManyToManyField('Snapshot', blank=True)
 
 
 class Snapshot(models.Model):
@@ -13,22 +18,46 @@ class Snapshot(models.Model):
     url: URL where the snapshot is stored
     """
 
+    # Contract/Chain Info
+    chain = models.TextField()
     contract_address = models.CharField(max_length=42)
-    user_address = models.CharField(max_length=42, blank=True, null=True)
-    start_blocknumber = models.IntegerField(default=3914495)
-    last_snapshot_block = models.IntegerField(blank=True, null=True)
+    contract_abi = models.JSONField()
+    event = models.JSONField()
+
+    # Block range to query
+    from_block = models.IntegerField(default=3914495)
+    to_block = models.IntegerField(default=99999999)
+
+    # Log filters and data to capture
+    argument_filters = models.JSONField()
+    captured_values = models.JSONField()
+
+    # Results storage (IPFS)
+    events_cid = models.TextField()
+    events_count = models.BigIntegerField(default=0)
+    addresses_cid = models.TextField()
+    addresses_count = models.BigIntegerField(default=0)
+
+    # Metadata
+    name = models.TextField()
+    description = models.TextField()
     public = models.BooleanField(default=True)
-    url = models.URLField(blank=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.contract_address} Snapshot: {self.pk}"
+        return f"{self.contract_address} Start: {self.from_block} End: {self.to_block}"
 
     def save(self, *args, **kwargs):
         """On save, update timestamps"""
-        self.modified = timezone.now()
+        self.updated_at = timezone.now()
+        self.filter_hash = hash_args(self.contract_address,
+                                     self.argument_filters,
+                                     self.captured_values)
         return super(Snapshot, self).save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['updated_at', 'to_block', 'created_at']
 
 
 class Contract(models.Model):
@@ -51,15 +80,15 @@ class Filter(models.Model):
     filter_hash: keccak hash of filter json
     url: url of stored filtered snapshot
     """
-
     snapshot = models.ForeignKey(Snapshot, on_delete=models.CASCADE)
-    filters = models.JSONField(blank=True, null=True)
     filter_hash = models.CharField(max_length=64, blank=True, null=True)
-    url = models.URLField()
 
     def save(self, *args, **kwargs):
         """On save, update filter hash"""
-        sha = hashlib.sha3_256()
-        sha.update(str(self.filters).encode("utf-8"))
-        self.filter_hash = sha.hexdigest()
+        self.filter_hash = hash_args(self.snapshot.contract_address,
+                                     self.snapshot.argument_filters,
+                                     self.snapshot.captured_values)
         return super(Filter, self).save(*args, **kwargs)
+
+
+

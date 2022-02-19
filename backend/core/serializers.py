@@ -5,14 +5,36 @@ from core.models import Snapshot, Contract, Filter
 class SnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snapshot
-        fields = ('contract_address', 'user_address', 'start_blocknumber',
-                  'public')
+        fields = [
+            "id",
+            "chain",
+            "contract_address",
+            "contract_abi",
+            "event",
+            "from_block",
+            "to_block",
+            "argument_filters",
+            "captured_values",
+            "events_cid",
+            "events_count",
+            "addresses_cid",
+            "addresses_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            # "creator",
+            "events_cid",
+            "events_count",
+            "addresses_cid",
+            "addresses_count",
+        ]
 
 
 class SnapshotListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snapshot
-        fields = ('contract_address', 'url', 'start_blocknumber',
+        fields = ('contract_address', 'start_blocknumber',
                   'last_snapshot_block')
 
 

@@ -16,10 +16,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from core.views import trigger_task
+
+from core.views import SnapshotViewSet
+
+from rest_framework import routers
+
+router = routers.SimpleRouter()
+router.register(r"snapshots", SnapshotViewSet)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('trigger/', trigger_task),
-    path('api/', include('core.urls')),
+    path("admin/", admin.site.urls),
+    path("api/", include(router.urls)),
 ]
