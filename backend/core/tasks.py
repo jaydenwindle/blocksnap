@@ -33,7 +33,7 @@ def execute_snapshot(snapshot_id: int):
 
     chain(
         chord(
-            (gather_events_for_page.s(snapshot_id, page) for page in range(10)),
+            (gather_events_for_page.s(snapshot_id, page) for page in range(100)),
             store_event_results.s(snapshot_id),
         ),
         gather_addresses.s(snapshot_id),
