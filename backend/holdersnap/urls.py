@@ -31,9 +31,9 @@ urlpatterns = [
     path("health_check", health_check),
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
-    path('get-snapshots/<str:user_address>/', get_snapshot_list_by_user,
+    path('api/get-snapshots/<str:user_address>/', get_snapshot_list_by_user,
          name='get-snapshots-by-user'),
-    path('get-snapshots/<str:user_address>/<str:contract_address>/',
+    path('api/get-snapshots/<str:user_address>/<str:contract_address>/',
          get_snapshot_list_by_contract, name='get-snapshots-by-user'),
 
 ]
