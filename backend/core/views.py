@@ -13,6 +13,10 @@ from core.tasks import execute_snapshot
 from core.models import Snapshot
 
 
+def health_check(request):
+    return JsonResponse({"healthy": True})
+
+
 class SnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snapshot
