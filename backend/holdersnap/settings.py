@@ -17,8 +17,7 @@ from pathlib import Path
 env = environ.Env(
     DEBUG=(bool, False),
     PINATA_JWT=(str, ""),
-    CELERY_BROKER_URL=(str, ""),
-    CELERY_RESULT_BACKEND=(str, ""),
+    REDIS_URL=(str, ""),
     ETHERSCAN_API_KEY=(str, ""),
 )
 
@@ -34,8 +33,12 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-fbwacultuo81lt^%z#fce&5hif8p2hfsi%2v^f-w9xlzcil&6("
 
+if "SECRET_KEY" in os.environ:
+    SECRET_KEY = os.environ["SECRET_KEY"]
+    DEBUG = False
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -91,12 +94,24 @@ WSGI_APPLICATION = "holdersnap.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if "PGDATABASE" in os.environ:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
+            "NAME": os.environ["PGDATABASE"],
+            "USER": os.environ["PGUSER"],
+            "PASSWORD": os.environ["PGPASSWORD"],
+            "HOST": os.environ["PGHOST"],
+            "PORT": os.environ["PGPORT"],
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -140,8 +155,8 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CELERY_BROKER_URL = env.cache_url("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = env.cache_url("CELERY_RESULT_BACKEND")
+CELERY_BROKER_URL = env.cache_url("REDIS_URL")
+CELERY_RESULT_BACKEND = env.cache_url("REDIS_URL")
 
 PINATA_JWT = env("PINATA_JWT")
 ETHERSCAN_API_KEY = env("ETHERSCAN_API_KEY")

@@ -1,0 +1,2 @@
+web: python manage.py migrate && gunicorn djangopy.wsgi
+worker: celery -A holdersnap worker -l INFO

@@ -1,7 +1,12 @@
+from django.http import JsonResponse
 from rest_framework import viewsets
 from core.tasks import execute_snapshot
 from core.serializers import SnapshotSerializer
 from core.models import Snapshot
+
+
+def health_check(request):
+    return JsonResponse({"healthy": True})
 
 
 class SnapshotViewSet(viewsets.ModelViewSet):

@@ -1,4 +1,4 @@
-# HolderSnap - Token snapshots made simple
+# Blocksnap - On-chain Data Snapshots Made Easy
 
 ### Dev Setup
 
