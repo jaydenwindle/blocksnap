@@ -10,8 +10,8 @@ from math import ceil
 from web3 import Web3
 from celery import shared_task, chord, chain
 from django.conf import settings
-
 from core.models import Snapshot
+
 
 PAGE_SIZE = 2000
 w3 = Web3(
