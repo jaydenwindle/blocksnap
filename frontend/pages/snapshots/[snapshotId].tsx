@@ -21,7 +21,7 @@ import {
   InputRightElement,
   IconButton,
 } from "@chakra-ui/react";
-import { EditIcon } from "@chakra-ui/icons";
+import { EditIcon, CloseIcon, CheckIcon } from "@chakra-ui/icons";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 
 import Papa from "papaparse";
@@ -42,6 +42,9 @@ import { useAccount } from "wagmi";
 const Home: NextPage = () => {
   const router = useRouter();
   const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
+  const [addressToSearch, setAddressToSearch] = useState("");
+  const [addressIsInTree, setAddressIsInTree] = useState(false);
+  const [merkleProof, setMerkleProof] = useState("");
 
   const { snapshotId } = router.query;
 
@@ -101,6 +104,23 @@ const Home: NextPage = () => {
     }
   }, [accountData?.address, data?.creator]);
 
+  useEffect(() => {
+    if (merkleTree && addressToSearch) {
+      const leaf = keccak256(addressToSearch);
+      const proof = merkleTree.getProof(leaf);
+      const hexProof = merkleTree.getHexProof(leaf);
+
+      console.log(proof);
+      console.log(hexProof);
+      console.log(MerkleTree.marshalProof(hexProof));
+
+      const isInTree = merkleTree.verify(hexProof, leaf, merkleTree.getRoot());
+
+      setAddressIsInTree(isInTree);
+      setMerkleProof(MerkleTree.marshalProof(hexProof));
+    }
+  }, [merkleTree, addressToSearch]);
+
   return (
     <>
       <Header />
@@ -123,7 +143,12 @@ const Home: NextPage = () => {
             </ModalBody>
           </ModalContent>
         </Modal>
-        <Heading pt={24}>Snapshot #{snapshotId}</Heading>
+        {data?.name ? (
+          <Heading pt={24}>{data?.name}</Heading>
+        ) : (
+          <Heading pt={24}>Snapshot #{snapshotId}</Heading>
+        )}
+        {data?.description && <Text>{data?.description}</Text>}
         <Box pb={8} pt={4}>
           <Tag mr={4} mb={4}>
             Contract address: {data?.contract_address}
@@ -141,11 +166,11 @@ const Home: NextPage = () => {
             Min Token Balance: {data?.token_balance}
           </Tag>
         </Box>
-        <Box mb={8}>
+        <Box mb={12}>
           <Text fontWeight="bold" mb={2}>
             Merkle Root:
           </Text>
-          <InputGroup size="md">
+          <InputGroup size="md" mb={4}>
             <Input
               value={merkleTree?.getRoot().toString("hex") || "loading..."}
             />
@@ -163,6 +188,40 @@ const Home: NextPage = () => {
               </Button>
             </InputRightElement>
           </InputGroup>
+          <Text fontWeight="bold" mb={2}>
+            Search for address:
+          </Text>
+          <InputGroup size="md">
+            <Input
+              value={addressToSearch}
+              onChange={(e) => {
+                setAddressToSearch(e.target.value);
+              }}
+            />
+          </InputGroup>
+          {addressToSearch !== "" && addressIsInTree && (
+            <Text mb={2} mt={2}>
+              <CheckIcon mr={2} />
+              Address exists in merkle tree!
+              <Button
+                ml={2}
+                h="1.75rem"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(merkleProof || "");
+                }}
+              >
+                Copy Proof
+              </Button>
+            </Text>
+          )}
+          {addressToSearch !== "" && !addressIsInTree && (
+            <Text mb={2} mt={2}>
+              <CloseIcon mr={2} />
+              Address does not exist in merkle tree
+            </Text>
+          )}
+          <Text></Text>
         </Box>
         <Box>
           <Link
