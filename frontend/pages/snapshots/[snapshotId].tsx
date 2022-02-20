@@ -49,7 +49,13 @@ const Home: NextPage = () => {
 
   const { data, error } = useSWR(
     `${process.env.NEXT_PUBLIC_API_URL}/api/snapshots/${snapshotId}/`,
-    fetcher,
+    (...args) =>
+      fetch(...args, {
+        headers: {
+          "X-Blocksnap-Auth-Signature": signature || "",
+          "X-Blocksnap-Auth-Message": message?.split("\n").join(",") || "",
+        },
+      }).then((res) => res.json()),
     { refreshInterval: 1000 }
   );
 

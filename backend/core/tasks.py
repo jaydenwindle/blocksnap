@@ -28,7 +28,7 @@ def execute_snapshot(snapshot_id: int):
 
     chain(
         chord(
-            (gather_events_for_page.s(snapshot_id, page) for page in range(10)),
+            (gather_events_for_page.s(snapshot_id, page) for page in range(pages)),
             store_event_results.s(snapshot_id),
         ),
         gather_addresses.s(snapshot_id),
@@ -98,7 +98,8 @@ def store_event_results(results, snapshot_id):
 
     all_entries = list(itertools.chain.from_iterable(results))
 
-    writer.writerow(list(all_entries[0].keys()))
+    if len(all_entries) > 0:
+        writer.writerow(list(all_entries[0].keys()))
 
     for entry in all_entries:
         writer.writerow(entry.values())

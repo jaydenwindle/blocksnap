@@ -26,8 +26,8 @@ class SnapshotViewSet(viewsets.ModelViewSet):
 
         snapshot_id = result.data.get("id")
 
-        # if snapshot_id:
-        #     execute_snapshot.delay(snapshot_id)
+        if snapshot_id:
+            execute_snapshot.delay(snapshot_id)
 
         return result
 
@@ -37,6 +37,9 @@ class SnapshotViewSet(viewsets.ModelViewSet):
         print(result)
 
         return result
+
+    def get_queryset(self):
+        return super().get_queryset().filter(creator=self.request.wallet_address)
 
 
 # Get snapshot list by user

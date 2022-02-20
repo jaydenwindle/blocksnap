@@ -38,6 +38,21 @@ import { ethers } from "ethers";
 const Home: NextPage = () => {
   const chains = ["ETH Mainnet", "Polygon", "Arbitrum", "Optimism"];
 
+  const getProviderForChain = (chain: string): string | null => {
+    switch (chain) {
+      case "ETH Mainnet":
+        return `https://eth-mainnet.alchemyapi.io/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      case "Polygon":
+        return `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      case "Arbitrum":
+        return `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      case "Optimism":
+        return `https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      default:
+        break;
+    }
+  };
+
   const providers = {
     "ETH Mainnet": `https://eth-mainnet.alchemyapi.io/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
     Polygon: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
@@ -74,7 +89,7 @@ const Home: NextPage = () => {
     const { contract_abi, event } = data;
     data.contract_abi = JSON.parse(contract_abi);
     data.event = JSON.parse(event);
-    data.rpc_url = providers[data.chain] || "";
+    data.rpc_url = getProviderForChain(data.chain) || "";
 
     data.token_balance = data.token_balance || 0;
 
@@ -94,8 +109,6 @@ const Home: NextPage = () => {
     console.log(result);
 
     const { id } = result;
-
-    return;
 
     router.push(`/snapshots/${id}`);
   };
@@ -126,8 +139,10 @@ const Home: NextPage = () => {
 
         const [firstTx] = data.result;
 
-        if (firstTx.blockNumber) {
+        if (firstTx?.blockNumber) {
           setValue("from_block", firstTx.blockNumber);
+        } else {
+          setValue("from_block", "");
         }
       }
     }
@@ -141,8 +156,10 @@ const Home: NextPage = () => {
 
         const data = await response.json();
 
-        if (data.result) {
+        if (!data.result.includes("not verified")) {
           setValue("contract_abi", data.result);
+        } else {
+          setValue("contract_abi", "");
         }
       }
     }
@@ -153,8 +170,9 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     async function getBlockNumberForChain() {
-      if (providers[chain]) {
-        const provider = new ethers.providers.JsonRpcProvider(providers[chain]);
+      const providerUrl = getProviderForChain(chain);
+      if (providerUrl) {
+        const provider = new ethers.providers.JsonRpcProvider(providerUrl);
 
         setValue("to_block", await provider.getBlockNumber());
       }
