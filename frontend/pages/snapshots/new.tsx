@@ -58,11 +58,11 @@ const Home: NextPage = () => {
       case "ETH Mainnet":
         return `https://api.etherscan.io/api?apikey=${process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY}`;
       case "Polygon":
-        return `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+        return `https://api.polygonscan.com/api?apikey=${process.env.NEXT_PUBLIC_POLYGONSCAN_API_KEY}`;
       case "Arbitrum":
-        return `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+        return `https://api.arbiscan.io/api?apikey=${process.env.NEXT_PUBLIC_ARBISCAN_API_KEY}`;
       case "Optimism":
-        return `https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+        return `https://api-optimistic.etherscan.io/api?apikey=${process.env.NEXT_PUBLIC_OPTIMISM_API_KEY}`;
       default:
         return null;
     }
@@ -138,7 +138,7 @@ const Home: NextPage = () => {
 
         const data = await response.json();
 
-        const [firstTx] = data.result;
+        const [firstTx] = data?.result || [];
 
         if (firstTx?.blockNumber) {
           setValue("from_block", firstTx.blockNumber);
@@ -157,7 +157,7 @@ const Home: NextPage = () => {
 
         const data = await response.json();
 
-        if (!data.result.includes("not verified")) {
+        if (!data?.result?.includes("not verified")) {
           setValue("contract_abi", data.result);
         } else {
           setValue("contract_abi", "");
@@ -209,7 +209,7 @@ const Home: NextPage = () => {
             </Stack>
           </RadioGroup>
           <FormHelperText>
-            HolderSnap will query data from this chain to create your snapshot
+            Blocksnap will query data from this chain to create your snapshot
           </FormHelperText>
         </FormControl>
         <FormControl mb={8}>
