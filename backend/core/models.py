@@ -5,7 +5,7 @@ from core.helpers import hash_args
 
 class Profile(models.Model):
     address = models.CharField(max_length=42, unique=True)
-    snapshots = models.ManyToManyField('Snapshot', blank=True)
+    snapshots = models.ManyToManyField("Snapshot", blank=True)
 
 
 class Snapshot(models.Model):
@@ -27,6 +27,7 @@ class Snapshot(models.Model):
     # Block range to query
     from_block = models.IntegerField(default=3914495)
     to_block = models.IntegerField(default=99999999)
+    token_balance = models.IntegerField(default=0)
 
     # Log filters and data to capture
     argument_filters = models.JSONField()
@@ -51,13 +52,13 @@ class Snapshot(models.Model):
     def save(self, *args, **kwargs):
         """On save, update timestamps"""
         self.updated_at = timezone.now()
-        self.filter_hash = hash_args(self.contract_address,
-                                     self.argument_filters,
-                                     self.captured_values)
+        self.filter_hash = hash_args(
+            self.contract_address, self.argument_filters, self.captured_values
+        )
         return super(Snapshot, self).save(*args, **kwargs)
 
     class Meta:
-        ordering = ['updated_at', 'to_block', 'created_at']
+        ordering = ["updated_at", "to_block", "created_at"]
 
 
 class Contract(models.Model):
@@ -66,6 +67,7 @@ class Contract(models.Model):
     deployed_block_number: block number contract was created at
     abi: contract ABI
     """
+
     address = models.CharField(max_length=42, blank=True, null=True)
     deployed_block_number = models.IntegerField(default=3914495)
     abi = models.JSONField(blank=True, null=True)
@@ -80,17 +82,18 @@ class Filter(models.Model):
     filter_hash: keccak hash of filter json
     url: url of stored filtered snapshot
     """
+
     snapshot = models.ForeignKey(Snapshot, on_delete=models.CASCADE)
     filter_hash = models.CharField(max_length=64, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         """On save, update filter hash"""
-        self.filter_hash = hash_args(self.snapshot.contract_address,
-                                     self.snapshot.argument_filters,
-                                     self.snapshot.captured_values)
+        self.filter_hash = hash_args(
+            self.snapshot.contract_address,
+            self.snapshot.argument_filters,
+            self.snapshot.captured_values,
+        )
         return super(Filter, self).save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.filter_hash}"
-
-

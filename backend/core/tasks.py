@@ -11,15 +11,16 @@ from web3 import Web3
 from celery import shared_task, chord, chain
 from django.conf import settings
 from core.models import Snapshot
+from ens import ENS
 
 
 PAGE_SIZE = 2000
-w3 = Web3(
-    Web3.HTTPProvider(
-        "https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD",
-        request_kwargs={"timeout": 60},
-    )
+provider = Web3.HTTPProvider(
+    "https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD",
+    request_kwargs={"timeout": 60},
 )
+w3 = Web3(provider)
+ens = ENS(provider)
 
 
 @shared_task
@@ -33,11 +34,10 @@ def execute_snapshot(snapshot_id: int):
 
     chain(
         chord(
-            (gather_events_for_page.s(snapshot_id, page) for page in range(100)),
+            (gather_events_for_page.s(snapshot_id, page) for page in range(10)),
             store_event_results.s(snapshot_id),
         ),
         gather_addresses.s(snapshot_id),
-        store_addresses.s(snapshot_id),
     )()
 
 
@@ -124,6 +124,38 @@ def store_event_results(results, snapshot_id):
 
 
 @shared_task
+def enrich_address_data(address, snapshot_id, supports_token_balance):
+    try:
+        snapshot = Snapshot.objects.get(pk=snapshot_id)
+    except Snapshot.DoesNotExist:
+        return
+
+    contract = w3.eth.contract(
+        address=Web3.toChecksumAddress(snapshot.contract_address),
+        abi=snapshot.contract_abi,
+    )
+
+    native_balance = w3.eth.get_balance(address, block_identifier=snapshot.to_block)
+
+    ens_name = ens.name(address)
+
+    row = [address, ens_name, native_balance]
+
+    if supports_token_balance:
+        token_balance = contract.functions.balanceOf(address).call(
+            block_identifier=snapshot.to_block
+        )
+
+        # filter out addresses based on token balance
+        if snapshot.token_balance > 0 and token_balance < snapshot.token_balance:
+            return
+
+        row.append(token_balance)
+
+    return row
+
+
+@shared_task
 def gather_addresses(results, snapshot_id):
     try:
         snapshot = Snapshot.objects.get(pk=snapshot_id)
@@ -146,11 +178,31 @@ def gather_addresses(results, snapshot_id):
     addresses_deduped = list(dict.fromkeys(addresses))
     print(len(addresses_deduped))
 
-    return addresses_deduped
+    supports_token_balance = (
+        len(
+            list(
+                filter(
+                    lambda n: n.get("name") == "balanceOf"
+                    and n.get("type") == "function",
+                    snapshot.contract_abi,
+                )
+            )
+        )
+        > 0
+    )
+
+    # enrich data
+    chord(
+        (
+            enrich_address_data.s(address, snapshot_id, supports_token_balance)
+            for address in addresses_deduped
+        ),
+        store_addresses.s(snapshot_id, supports_token_balance),
+    )()
 
 
 @shared_task
-def store_addresses(addresses, snapshot_id):
+def store_addresses(data, snapshot_id, supports_token_balance):
     try:
         snapshot = Snapshot.objects.get(pk=snapshot_id)
     except Snapshot.DoesNotExist:
@@ -159,10 +211,16 @@ def store_addresses(addresses, snapshot_id):
     file = io.StringIO()
     writer = csv.writer(file)
 
-    writer.writerow(["Wallet Address"])
+    header = ["Wallet Address", "ENS Name", "Native Balance"]
 
-    for address in addresses:
-        writer.writerow([address])
+    if supports_token_balance:
+        header.append("Token Balance")
+
+    writer.writerow(header)
+
+    for row in data:
+        if row is not None:
+            writer.writerow(row)
 
     pin_url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
 
@@ -179,5 +237,5 @@ def store_addresses(addresses, snapshot_id):
     print(result)
 
     snapshot.addresses_cid = result["IpfsHash"]
-    snapshot.addresses_count = len(addresses)
+    snapshot.addresses_count = len(data)
     snapshot.save()

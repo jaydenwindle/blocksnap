@@ -13,6 +13,7 @@ class SnapshotSerializer(serializers.ModelSerializer):
             "event",
             "from_block",
             "to_block",
+            "token_balance",
             "argument_filters",
             "captured_values",
             "events_cid",
@@ -34,17 +35,16 @@ class SnapshotSerializer(serializers.ModelSerializer):
 class SnapshotListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snapshot
-        fields = ('contract_address', 'start_blocknumber',
-                  'last_snapshot_block')
+        fields = ("contract_address", "start_blocknumber", "last_snapshot_block")
 
 
 class ContractSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contract
-        fields = ('address', 'deployed_block_number', 'abi')
+        fields = ("address", "deployed_block_number", "abi")
 
 
 class FilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Filter
-        fields = ('snapshot', 'filters', 'url')
+        fields = ("snapshot", "filters", "url")
