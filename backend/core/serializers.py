@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import Snapshot, Contract, Filter
+from core.models import Snapshot, Contract, Filter, Profile
 
 
 class SnapshotSerializer(serializers.ModelSerializer):
@@ -32,10 +32,16 @@ class SnapshotSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ["address", "snapshots"]
+
+
 class SnapshotListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snapshot
-        fields = ("contract_address", "start_blocknumber", "last_snapshot_block")
+        fields = ("contract_address", "from_block", "to_block")
 
 
 class ContractSerializer(serializers.ModelSerializer):

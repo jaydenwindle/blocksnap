@@ -5,13 +5,13 @@ from core.helpers import hash_args
 
 class Profile(models.Model):
     address = models.CharField(max_length=42, unique=True)
-    snapshots = models.ManyToManyField("Snapshot", blank=True)
+    snapshots = models.ManyToManyField("Snapshot")
 
 
 class Snapshot(models.Model):
     """
     contract_address: Token Contract Address
-    user_address: Address of the user requesting a snapshot
+    user_address: Address of the user requesting a snapghot
     start_blocknumber: block number to start indexing on
     last_snapshot_block: last block in snapshot
     public: Should the snapshot be publicly accessible or private

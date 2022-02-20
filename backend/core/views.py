@@ -1,8 +1,12 @@
 from django.http import JsonResponse
 from rest_framework import viewsets
 from core.tasks import execute_snapshot
-from core.serializers import SnapshotSerializer
-from core.models import Snapshot
+from core.serializers import (
+    SnapshotSerializer, SnapshotListSerializer, ProfileSerializer
+)
+from core.models import Snapshot, Profile
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 
 def health_check(request):
@@ -24,4 +28,24 @@ class SnapshotViewSet(viewsets.ModelViewSet):
         return result
 
 
+# Get snapshot list by user
+@api_view(['GET'])
+def get_snapshot_list_by_user(request, user_address):
+    profile, created = Profile.objects.get_or_create(address=user_address)
+    if created:
+        profile.save()
+    snapshots = profile.snapshots.all()
+    serializer = SnapshotListSerializer(snapshots, many=True)
+    return Response(serializer.data)
 
+
+# Get snapshot list by contract address
+@api_view(['GET'])
+def get_snapshot_list_by_contract(request, user_address, contract_address):
+    profile, created = Profile.objects.get_or_create(address=user_address)
+    if created:
+        profile.save()
+    snapshots = profile.snapshots.filter(
+        contract_address=contract_address)
+    serializer = SnapshotListSerializer(snapshots, many=True)
+    return Response(serializer.data)

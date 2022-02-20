@@ -17,7 +17,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 
-from core.views import SnapshotViewSet, health_check
+from core.views import (
+    SnapshotViewSet, health_check, get_snapshot_list_by_user,
+    get_snapshot_list_by_contract
+)
 
 from rest_framework import routers
 
@@ -28,4 +31,9 @@ urlpatterns = [
     path("health_check", health_check),
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
+    path('api/get-snapshots/<str:user_address>/', get_snapshot_list_by_user,
+         name='get-snapshots-by-user'),
+    path('api/get-snapshots/<str:user_address>/<str:contract_address>/',
+         get_snapshot_list_by_contract, name='get-snapshots-by-user'),
+
 ]
