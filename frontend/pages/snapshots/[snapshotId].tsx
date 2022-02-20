@@ -19,7 +19,9 @@ import {
   Input,
   InputGroup,
   InputRightElement,
+  IconButton,
 } from "@chakra-ui/react";
+import { EditIcon } from "@chakra-ui/icons";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 
 import Papa from "papaparse";
@@ -49,8 +51,8 @@ const Home: NextPage = () => {
 
   const { data, error } = useSWR(
     `${process.env.NEXT_PUBLIC_API_URL}/api/snapshots/${snapshotId}/`,
-    (...args) =>
-      fetch(...args, {
+    (...args: string[]) =>
+      fetch(args[0] || "", {
         headers: {
           "X-Blocksnap-Auth-Signature": signature || "",
           "X-Blocksnap-Auth-Message": message?.split("\n").join(",") || "",

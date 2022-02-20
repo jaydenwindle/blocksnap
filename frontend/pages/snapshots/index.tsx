@@ -49,6 +49,7 @@ const SnapshotList: NextPage = () => {
         <Box>
           {data?.map((snapshot: { id: string }) => (
             <Box
+              key={snapshot.id}
               borderWidth="1px"
               borderRadius="lg"
               overflow="hidden"

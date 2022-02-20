@@ -49,22 +49,23 @@ const Home: NextPage = () => {
       case "Optimism":
         return `https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
       default:
-        break;
+        return null;
     }
   };
 
-  const providers = {
-    "ETH Mainnet": `https://eth-mainnet.alchemyapi.io/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    Polygon: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    Arbitrum: `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    Optimism: `https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-  };
-
-  const block_apis = {
-    "ETH Mainnet": `https://api.etherscan.io/api?apikey=${process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY}`,
-    Polygon: `https://api.polygonscan.com/api?apikey=${process.env.NEXT_PUBLIC_POLYGONSCAN_API_KEY}`,
-    Arbitrum: `https://api.arbiscan.io/api?apikey=${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    Optimism: `https://api-optimistic.etherscan.io/api?apikey=${process.env.NEXT_PUBLIC_OPTIMISM_API_KEY}`,
+  const getBlockApiForChain = (chain: string): string | null => {
+    switch (chain) {
+      case "ETH Mainnet":
+        return `https://api.etherscan.io/api?apikey=${process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY}`;
+      case "Polygon":
+        return `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      case "Arbitrum":
+        return `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      case "Optimism":
+        return `https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      default:
+        return null;
+    }
   };
 
   const { signature, message, signIn } = useSIWE();
@@ -129,8 +130,8 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     async function getContractFirstTransaction() {
-      if (contractAddress && block_apis[chain]) {
-        const apiUrl = block_apis[chain];
+      if (contractAddress && getBlockApiForChain(chain)) {
+        const apiUrl = getBlockApiForChain(chain);
         const response = await fetch(
           `${apiUrl}&module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&page=1&offset=10&sort=asc`
         );
@@ -148,8 +149,8 @@ const Home: NextPage = () => {
     }
 
     async function getContractAbi() {
-      if (contractAddress && block_apis[chain]) {
-        const apiUrl = block_apis[chain];
+      if (contractAddress && getBlockApiForChain(chain)) {
+        const apiUrl = getBlockApiForChain(chain);
         const response = await fetch(
           `${apiUrl}&module=contract&action=getabi&address=${contractAddress}`
         );
