@@ -19,9 +19,15 @@ class Snapshot(models.Model):
     """
 
     # Contract/Chain Info
+    creator = models.CharField(
+        max_length=42, default="0x0000000000000000000000000000000000000000"
+    )
     chain = models.TextField()
     contract_address = models.CharField(max_length=42)
     contract_abi = models.JSONField()
+    rpc_url = models.URLField(
+        default="https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD"
+    )
     event = models.JSONField()
 
     # Block range to query

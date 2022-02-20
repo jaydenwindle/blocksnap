@@ -7,9 +7,12 @@ class SnapshotSerializer(serializers.ModelSerializer):
         model = Snapshot
         fields = [
             "id",
+            "creator",
+            "public",
             "chain",
             "contract_address",
             "contract_abi",
+            "rpc_url",
             "event",
             "from_block",
             "to_block",
@@ -24,7 +27,6 @@ class SnapshotSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = [
-            # "creator",
             "events_cid",
             "events_count",
             "addresses_cid",

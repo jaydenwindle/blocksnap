@@ -1,4 +1,12 @@
 [[package]]
+name = "abnf"
+version = "1.1.1"
+description = "Parsers for ABNF grammars."
+category = "main"
+optional = false
+python-versions = ">=3"
+
+[[package]]
 name = "aiohttp"
 version = "3.8.1"
 description = "Async http client/server framework (asyncio)"
@@ -790,6 +798,17 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "python-dateutil"
+version = "2.8.2"
+description = "Extensions to the standard Python datetime module"
+category = "main"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+
+[package.dependencies]
+six = ">=1.5"
+
+[[package]]
 name = "pytz"
 version = "2021.3"
 description = "World timezone definitions, modern and historical"
@@ -856,6 +875,20 @@ doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)"]
 lint = ["flake8 (==3.4.1)"]
 rust-backend = ["rusty-rlp (>=0.1.15,<0.2)"]
 test = ["hypothesis (==5.19.0)", "pytest (==5.4.3)", "tox (>=2.9.1,<3)"]
+
+[[package]]
+name = "siwe"
+version = "1.0.0"
+description = "A Python implementation of Sign-In with Ethereum (EIP-4361)."
+category = "main"
+optional = false
+python-versions = ">=3.7, !=2.7.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
+
+[package.dependencies]
+abnf = "1.1.1"
+eth-account = ">=0.5.6,<0.6.0"
+python-dateutil = "2.8.2"
+web3 = ">=5.26.0,<6.0.0"
 
 [[package]]
 name = "six"
@@ -1027,9 +1060,13 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "ec250b2269de69db7e077f0d6733bded2cecd1ac82dd8d3d39897793cd8317b0"
+content-hash = "89c64df1fec5d226753319ca1cde6f9e06a31790d756fe420a81debcefcff691"
 
 [metadata.files]
+abnf = [
+    {file = "abnf-1.1.1-py2.py3-none-any.whl", hash = "sha256:c18f74ad61aa381e9afd91a349d3f43b98c962fce5dcad018d883663fd4cbc38"},
+    {file = "abnf-1.1.1.tar.gz", hash = "sha256:f8e699ee0a3be375fdccdbbbd17b69e3941c7467a203de9c3e38bb9b38bbc191"},
+]
 aiohttp = [
     {file = "aiohttp-3.8.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:1ed0b6477896559f17b9eaeb6d38e07f7f9ffe40b9f0f9627ae8b9926ae260a8"},
     {file = "aiohttp-3.8.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7dadf3c307b31e0e61689cbf9e06be7a867c563d5a63ce9dca578f956609abf8"},
@@ -1702,6 +1739,10 @@ pysha3 = [
     {file = "pysha3-1.0.2-cp36-cp36m-win_amd64.whl", hash = "sha256:0060a66be16665d90c432f55a0ba1f6480590cfb7d2ad389e688a399183474f0"},
     {file = "pysha3-1.0.2.tar.gz", hash = "sha256:fe988e73f2ce6d947220624f04d467faf05f1bbdbc64b0a201296bb3af92739e"},
 ]
+python-dateutil = [
+    {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
+    {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+]
 pytz = [
     {file = "pytz-2021.3-py2.py3-none-any.whl", hash = "sha256:3672058bc3453457b622aab7a1c3bfd5ab0bdae451512f6cf25f64ed37f5b87c"},
     {file = "pytz-2021.3.tar.gz", hash = "sha256:acad2d8b20a1af07d4e4c9d2e9285c5ed9104354062f275f3fcd88dcef4f1326"},
@@ -1731,6 +1772,10 @@ requests = [
 rlp = [
     {file = "rlp-2.0.1-py2.py3-none-any.whl", hash = "sha256:52a57c9f53f03c88b189283734b397314288250cc4a3c4113e9e36e2ac6bdd16"},
     {file = "rlp-2.0.1.tar.gz", hash = "sha256:665e8312750b3fc5f7002e656d05b9dcb6e93b6063df40d95c49ad90c19d1f0e"},
+]
+siwe = [
+    {file = "siwe-1.0.0-py3-none-any.whl", hash = "sha256:5a27668779c60f2f19b1adee892f5a4264d6f7e0bc6368d65f61fc97832b32e0"},
+    {file = "siwe-1.0.0.tar.gz", hash = "sha256:00e1c6dae6c546461361678bdf5e80b726652a9aa537bfc7a84a19ee3c2860dc"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},

@@ -15,12 +15,6 @@ from ens import ENS
 
 
 PAGE_SIZE = 2000
-provider = Web3.HTTPProvider(
-    "https://eth-mainnet.alchemyapi.io/v2/NGtUbewnL3eCvtxqJQr_biDfjQjPOCBD",
-    request_kwargs={"timeout": 60},
-)
-w3 = Web3(provider)
-ens = ENS(provider)
 
 
 @shared_task
@@ -43,10 +37,17 @@ def execute_snapshot(snapshot_id: int):
 
 @shared_task
 def gather_events_for_page(snapshot_id: int, page: int):
+
     try:
         snapshot = Snapshot.objects.get(pk=snapshot_id)
     except Snapshot.DoesNotExist:
         return
+
+    provider = Web3.HTTPProvider(
+        snapshot.rpc_url,
+        request_kwargs={"timeout": 60},
+    )
+    w3 = Web3(provider)
 
     from_block = snapshot.from_block + (page * PAGE_SIZE)
     to_block = snapshot.from_block + ((page + 1) * PAGE_SIZE)
@@ -130,6 +131,13 @@ def enrich_address_data(address, snapshot_id, supports_token_balance):
     except Snapshot.DoesNotExist:
         return
 
+    provider = Web3.HTTPProvider(
+        snapshot.rpc_url,
+        request_kwargs={"timeout": 60},
+    )
+    w3 = Web3(provider)
+    ens = ENS(provider)
+
     contract = w3.eth.contract(
         address=Web3.toChecksumAddress(snapshot.contract_address),
         abi=snapshot.contract_abi,
@@ -137,7 +145,10 @@ def enrich_address_data(address, snapshot_id, supports_token_balance):
 
     native_balance = w3.eth.get_balance(address, block_identifier=snapshot.to_block)
 
-    ens_name = ens.name(address)
+    if snapshot.chain == "ETH Mainnet":
+        ens_name = ens.name(address)
+    else:
+        ens_name = None
 
     row = [address, ens_name, native_balance]
 

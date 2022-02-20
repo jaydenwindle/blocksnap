@@ -34,6 +34,8 @@ import { useRouter } from "next/router";
 import Header from "../../components/Header";
 import fetcher from "../../utils/fetcher";
 import { ethers } from "ethers";
+import { useSIWE, SIWEModal } from "../../components/SIWEProvider";
+import { useAccount } from "wagmi";
 
 const Home: NextPage = () => {
   const router = useRouter();
@@ -41,8 +43,12 @@ const Home: NextPage = () => {
 
   const { snapshotId } = router.query;
 
+  const { signature, message, signIn } = useSIWE();
+
+  const [{ data: accountData }] = useAccount({ fetchEns: true });
+
   const { data, error } = useSWR(
-    `http://localhost:8000/api/snapshots/${snapshotId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/snapshots/${snapshotId}/`,
     fetcher,
     { refreshInterval: 1000 }
   );
@@ -76,12 +82,26 @@ const Home: NextPage = () => {
     }
   }, [data?.addresses_cid]);
 
+  useEffect(() => {
+    if (
+      data?.creator &&
+      accountData?.address &&
+      accountData?.address !== data?.creator &&
+      !data?.public
+    ) {
+      router.replace("/");
+    }
+  }, [accountData?.address, data?.creator]);
+
   return (
     <>
       <Header />
       <Container maxW="container.lg">
+        <SIWEModal />
         <Modal
-          isOpen={data && (!data?.addresses_cid || !data?.events_cid)}
+          isOpen={
+            data && signature && (!data?.addresses_cid || !data?.events_cid)
+          }
           isCentered
           onClose={() => {}}
         >
@@ -108,6 +128,9 @@ const Home: NextPage = () => {
           </Tag>
           <Tag mr={4} mb={4}>
             Event: {data?.event?.name}
+          </Tag>
+          <Tag mr={4} mb={4}>
+            Min Token Balance: {data?.token_balance}
           </Tag>
         </Box>
         <Box mb={8}>

@@ -1,8 +1,9 @@
 import { Box, Button, Container, Flex } from "@chakra-ui/react";
-import { useAccount, useConnect } from "wagmi";
+import { useAccount } from "wagmi";
+import { useSIWE } from "../components/SIWEProvider";
 
 export default function Header() {
-  const [{ data }, connect] = useConnect();
+  const { signIn } = useSIWE();
   const [{ data: accountData }, disconnect] = useAccount({
     fetchEns: true,
   });
@@ -16,12 +17,8 @@ export default function Header() {
       <Box pt={4} pb={4}>
         <Flex justify="space-between" align="center">
           <Box w={10} h={10} background="#22303E" rounded="full" />
-          {accountData && (
-            <Button onClick={() => disconnect()}>{displayName}</Button>
-          )}
-          {!accountData && (
-            <Button onClick={() => connect(data.connectors[0])}>Connect</Button>
-          )}
+          {accountData && <Button onClick={signIn}>{displayName}</Button>}
+          {!accountData && <Button onClick={signIn}>Connect</Button>}
         </Flex>
       </Box>
     </Container>
