@@ -34,17 +34,22 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-fbwacultuo81lt^%z#fce&5hif8p2hfsi%2v^f-w9xlzcil&6("
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env("DEBUG")
 
 if "SECRET_KEY" in os.environ:
     SECRET_KEY = os.environ["SECRET_KEY"]
     DEBUG = False
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://blocksnap.on.fleek.co",
+    "https://blocksnap.xyz",
+]
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-blocksnap-auth-signature",
