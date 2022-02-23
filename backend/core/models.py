@@ -6,6 +6,7 @@ from core.helpers import hash_args
 class Profile(models.Model):
     address = models.CharField(max_length=42, unique=True)
     snapshots = models.ManyToManyField("Snapshot")
+    rpc_nodes = models.ManyToManyField("RPC")
 
 
 class Snapshot(models.Model):
@@ -103,3 +104,12 @@ class Filter(models.Model):
 
     def __str__(self):
         return f"{self.filter_hash}"
+
+
+class RPC(models.Model):
+    """
+    newtork_name: Network name
+    rpc_node: evm rpc node url
+    """
+    network_name = models.TextField()
+    node = models.URLField()
