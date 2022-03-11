@@ -5,7 +5,7 @@ description = ""
 authors = ["Jayden Windle <jaydenwindle@gmail.com>", "Lance Rogers <lancekrogers@gmail.com"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 web3 = "^5.28.0"
 Django = "^4.0.2"
 celery = {extras = ["redis"], version = "^5.2.3"}
